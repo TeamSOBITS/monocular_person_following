@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
+
 import sys
 import numpy
 import rosbag
@@ -10,7 +11,7 @@ def main():
 
 	dst_file = sys.argv[2]
 
-	'read image timestamps'
+	print('read image timestamps')
 	image_stamps = []
 	with rosbag.Bag(images_bag, 'r') as bag:
 		for topic, msg, stamp in bag.read_messages():
@@ -25,7 +26,7 @@ def main():
 
 	init_bbox = None
 	with rosbag.Bag(results_bag, 'r') as bag:
-		print 'read results'
+		print('read results')
 		all_msgs = sorted([x for x in bag.read_messages()], key=lambda x: x[2])
 
 		target_id = -1
@@ -71,7 +72,7 @@ def main():
 				if init_bbox is None:
 					init_bbox = tl.tolist() + wh.tolist()
 
-	print init_bbox
+	print(init_bbox)
 	with open(dst_file, 'w') as file:
 		bbox = init_bbox
 		for i, timestamp in enumerate(image_stamps):

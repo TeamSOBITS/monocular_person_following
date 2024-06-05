@@ -1,11 +1,12 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
+
 import tf
 import math
 import rospy
 
 from geometry_msgs.msg import *
-from monocular_people_tracking.msg import *
-from monocular_person_following.msg import *
+from monocular_people_tracking.msg import TrackArray
+from monocular_person_following.msg import Target
 
 
 class RobotControllerNode:
@@ -45,22 +46,22 @@ class RobotControllerNode:
 			self.tf_listener.waitForTransform('base_link', tracks_msg.header.frame_id, tracks_msg.header.stamp, rospy.Duration(0.5))
 			target_pos = self.tf_listener.transformPoint('base_link', point)
 		except:
-			print 'failed to lookup transform between base_link and', tracks_msg.header.frame_id
+			print('failed to lookup transform between base_link and', tracks_msg.header.frame_id)
 			self.cmd_vel_pub.publish(Twist())
 			return
 
 		theta = math.atan2(target_pos.point.y, target_pos.point.x)
-		print 'x, y, theta:', target_pos.point.x, target_pos.point.y, theta, math.radians(45)
+		print('x, y, theta:', target_pos.point.x, target_pos.point.y, theta, math.radians(45))
 
 		va = min(self.max_va, max(-self.max_va, theta * self.gain_va))
 		vx = 0.0
 		if abs(theta) < math.radians(45):
 			vx = (target_pos.point.x - self.distance) * self.gain_vx
-			print 'raw vx', vx
+			print('raw vx', vx)
 			min_vx = -self.max_vx if self.enable_back else 0.0
 			vx = min(self.max_vx, max(min_vx, vx))
 		else:
-			print 'rotation too big'
+			print('rotation too big')
 
 
 		twist = Twist()
@@ -72,7 +73,7 @@ class RobotControllerNode:
 
 	def spin(self):
 		if (rospy.Time.now() - self.last_time).to_sec() > self.timeout:
-			print 'timeout!!'
+			print('timeout!!')
 			self.cmd_vel_pub.publish(Twist())
 
 

@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
+
 import os
 import sys
 import cv2
@@ -23,10 +24,10 @@ def main():
 	with rosbag.Bag(output_bag, 'w') as dst_bag:
 		stamp = rospy.Time(0)
 		for image_file in image_files:
-			print image_file
+			print(image_file)
 			image = cv2.imread(image_file)
 			if image is None:
-				print 'failed to read image...'
+				print('failed to read image...')
 				continue
 
 			stamp += rospy.Duration(1.0 / 14.2)

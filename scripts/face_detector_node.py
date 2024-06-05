@@ -1,14 +1,15 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
+
 import cv2
 import numpy
 import dlib
 import rospy
 import cv_bridge
 import message_filters
-from tfpose_ros.msg import *
-from sensor_msgs.msg import *
-from monocular_people_tracking.msg import *
-from monocular_person_following.msg import *
+
+from sensor_msgs.msg import Image
+from monocular_people_tracking.msg import TrackArray
+from monocular_person_following.msg import FaceDetectionArray, FaceDetection, BoundingBox2D
 
 
 class FaceDetectorNode:
@@ -85,7 +86,7 @@ class FaceDetectorNode:
 
 	def detect_face(self, image, roi):
 		if roi[1][0] - roi[0][0] < 10 or roi[1][1] - roi[0][1] < 10:
-			print 'too small roi!!'
+			print('too small roi!!')
 			return None
 
 		tl, br = roi
@@ -122,11 +123,11 @@ class FaceDetectorNode:
 
 
 def main():
-	print '--- face_detector_node ---'
+	print('--- face_detector_node ---')
 	rospy.init_node('face_detector_node')
 	node = FaceDetectorNode()
 
-	print 'ready'
+	print('ready')
 	rospy.spin()
 
 if __name__ == '__main__':
