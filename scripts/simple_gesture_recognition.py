@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
+
 import rospy
-from monocular_people_tracking.msg import *
-from monocular_person_following.srv import *
+from monocular_people_tracking.msg import TrackArray
+from monocular_person_following.srv import Imprint, ImprintRequest
 
 
 class GestureRecognizer:
@@ -16,15 +17,21 @@ class GestureRecognizer:
 
 		skeleton = track_msg.associated[0]
 
-		neck = [x for x in skeleton.body_part if x.part_id == 1]
-		r_elbow = [x for x in skeleton.body_part if x.part_id == 3]
-		r_hand = [x for x in skeleton.body_part if x.part_id == 4]
+		# neck = [x for x in skeleton.body_part if x.part_id == 1]
+		# r_elbow = [x for x in skeleton.body_part if x.part_id == 3]
+		# r_hand = [x for x in skeleton.body_part if x.part_id == 4]
+		neck    = skeleton.neck
+		r_elbow = skeleton.r_elb
+		r_hand  = skeleton.r_wri
 
-		if not len(neck) or not len(r_elbow) or not len(r_hand):
+
+		# if not len(neck) or not len(r_elbow) or not len(r_hand):
+		if (neck.x < 0 or r_elbow.x < 0 or r_hand.x < 0) or (neck.y < 0 or r_elbow.y < 0 or r_hand.y < 0):
 			self.last_stamp = rospy.Time.now()
 			return
 
-		if r_elbow[0].y < neck[0].y and r_hand[0].y < neck[0].y:
+		# if r_elbow[0].y < neck[0].y and r_hand[0].y < neck[0].y:
+		if r_elbow.y < neck.y and r_hand.y < neck.y:
 			print(self.track_id, rospy.Time.now() - self.last_stamp)
 			if rospy.Time.now() - self.last_stamp > rospy.Duration(5.0):
 				imprint(track_msg.id)
