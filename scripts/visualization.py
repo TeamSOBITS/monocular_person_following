@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import cv2
 import math
 import numpy
@@ -7,13 +8,13 @@ import tf
 import rospy
 import cv_bridge
 import message_filters
-from tfpose_ros.msg import *
-from sensor_msgs.msg import *
-from monocular_people_tracking.msg import *
-from monocular_person_following.msg import *
 
-from tf_pose import common
-from tf_pose.estimator import Human, BodyPart
+from lightweight_human_pose_estimation.msg import KeyPoint2DArray, KeyPoint2D
+from sensor_msgs.msg import Image
+from monocular_people_tracking.msg import TrackArray
+from monocular_person_following.msg import FaceDetectionArray, FaceDetection, BoundingBox2D, Target
+
+from lightweight_human_pose_estimation.modules.pose import Pose
 
 
 class VisualizationNode:
@@ -27,13 +28,13 @@ class VisualizationNode:
 		self.target_id = 0
 		self.state_name = "NONE"
 		self.confidences = {}
-		self.use_face = rospy.get_param('~use_face', True)
+		self.use_face = rospy.get_param('~use_face', False)
 		self.target_sub = rospy.Subscriber('/monocular_person_following/target', Target, self.target_callback)
 
 		self.image = numpy.zeros((128, 128, 3), dtype=numpy.uint8)
 		subs = [
-			message_filters.Subscriber('image_rect', Image),
-			message_filters.Subscriber('/pose_estimator/pose', Persons),
+			message_filters.Subscriber('image_raw', Image),
+			message_filters.Subscriber('/human_pose_2d/pose_array', KeyPoint2DArray),
 			message_filters.Subscriber('/monocular_people_tracking/tracks', TrackArray)
 		]
 
@@ -67,16 +68,7 @@ class VisualizationNode:
 	def callback(self, image_msg, poses_msg, tracks_msg, faces_msg):
 		image = cv_bridge.CvBridge().imgmsg_to_cv2(image_msg, 'bgr8')
 
-		humans = []
-		for p_idx, person in enumerate(poses_msg.persons):
-			human = Human([])
-			for body_part in person.body_part:
-				part = BodyPart('', body_part.part_id, body_part.x, body_part.y, body_part.confidence)
-				human.body_parts[body_part.part_id] = part
-
-			humans.append(human)
-
-		image = self.draw_humans(image, humans, imgcopy=False)
+		image = self.draw_humans(image, poses_msg.data, imgcopy=False)
 
 		for track in tracks_msg.tracks:
 			self.draw_expected_measurement(image, track)
@@ -115,35 +107,47 @@ class VisualizationNode:
 
 		self.image = image
 
-	# taken from tfpose_ros/tf_pose/estimator.py
 	def draw_humans(self, npimg, humans, imgcopy=False):
 		if imgcopy:
-			npimg = np.copy(npimg)
+			npimg = numpy.copy(npimg)
 
 		canvas = npimg.copy()
-		image_h, image_w = npimg.shape[:2]
-		centers = {}
-		for human in humans:
-			# draw point
-			for i in range(common.CocoPart.Background.value):
-				if i not in human.body_parts.keys():
-					continue
-
-				body_part = human.body_parts[i]
-				center = (int(body_part.x * image_w + 0.5), int(body_part.y * image_h + 0.5))
-				centers[i] = center
-				cv2.circle(canvas, center, 3, common.CocoColors[i], thickness=3, lineType=8, shift=0)
-
-			# draw line
-			for pair_order, pair in enumerate(common.CocoPairsRender):
-				if pair[0] not in human.body_parts.keys() or pair[1] not in human.body_parts.keys():
-					continue
-
-				# npimg = cv2.line(npimg, centers[pair[0]], centers[pair[1]], common.CocoColors[pair_order], 3)
-				cv2.line(canvas, centers[pair[0]], centers[pair[1]], common.CocoColors[pair_order], 3)
+		for hu in humans:
+			pose_keypoints = self.get_keypoints_array(hu)
+			pose = Pose(pose_keypoints, hu.confidence)
+			pose.draw(canvas)
 
 		npimg = npimg / 2 + canvas / 2
 		return npimg
+	
+	def get_keypoints_array(self, human):
+		num_keypoints = 18  # Assuming there are 18 keypoints based on the message structure
+
+		# Initialize pose_keypoints with -1 values
+		pose_keypoints = numpy.ones((num_keypoints, 2), dtype=numpy.int32) * -1
+
+		# Assign keypoint values from message to pose_keypoints
+		pose_keypoints[0] = [human.nose.x, human.nose.y]
+		pose_keypoints[1] = [human.neck.x, human.neck.y]
+		pose_keypoints[2] = [human.r_sho.x, human.r_sho.y]
+		pose_keypoints[3] = [human.r_elb.x, human.r_elb.y]
+		pose_keypoints[4] = [human.r_wri.x, human.r_wri.y]
+		pose_keypoints[5] = [human.l_sho.x, human.l_sho.y]
+		pose_keypoints[6] = [human.l_elb.x, human.l_elb.y]
+		pose_keypoints[7] = [human.l_wri.x, human.l_wri.y]
+		pose_keypoints[8] = [human.r_hip.x, human.r_hip.y]
+		pose_keypoints[9] = [human.r_knee.x, human.r_knee.y]
+		pose_keypoints[10] = [human.r_ank.x, human.r_ank.y]
+		pose_keypoints[11] = [human.l_hip.x, human.l_hip.y]
+		pose_keypoints[12] = [human.l_knee.x, human.l_knee.y]
+		pose_keypoints[13] = [human.l_ank.x, human.l_ank.y]
+		pose_keypoints[14] = [human.r_eye.x, human.r_eye.y]
+		pose_keypoints[15] = [human.l_eye.x, human.l_eye.y]
+		pose_keypoints[16] = [human.r_ear.x, human.r_ear.y]
+		pose_keypoints[17] = [human.l_ear.x, human.l_ear.y]
+
+		return pose_keypoints
+
 
 	def draw_expected_measurement(self, image, track):
 		meas_mean = numpy.float32(track.expected_measurement_mean).flatten()
@@ -155,7 +159,7 @@ class VisualizationNode:
 			extents = numpy.sqrt(kai * kai * w)
 			angle = math.atan2(v[0, 1], v[1, 1])
 
-			return (extents[0], extents[1], angle)
+			return (int(extents[0]), int(extents[1]), angle)
 
 		neck_ellipse = error_ellipse(meas_cov[:2, :2], 3.0)
 		ankle_ellipse = error_ellipse(meas_cov[2:, 2:], 3.0)
@@ -165,7 +169,7 @@ class VisualizationNode:
 		color = self.color_palette[track.id % len(self.color_palette)]
 		color = tuple(int(x) for x in color)
 
-		cv2.ellipse(image, neck_pos, neck_ellipse[:2], neck_ellipse[-1], 0, 360, color, 2)
+		cv2.ellipse(image, neck_pos , neck_ellipse[:2] , neck_ellipse[-1], 0, 360, color, 2)
 		cv2.ellipse(image, ankle_pos, ankle_ellipse[:2], neck_ellipse[-1], 0, 360, color, 2)
 		cv2.line(image, neck_pos, ankle_pos, color, 2)
 
