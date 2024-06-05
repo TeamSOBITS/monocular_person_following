@@ -6,69 +6,69 @@ from monocular_person_following.srv import Imprint, ImprintRequest
 
 
 class GestureRecognizer:
-	def __init__(self, track_id):
-		self.track_id = track_id
-		self.last_stamp = rospy.Time.now()
+    def __init__(self, track_id):
+        self.track_id = track_id
+        self.last_stamp = rospy.Time.now()
 
-	def callback(self, track_msg, imprint):
-		if not len(track_msg.associated):
-			self.last_stamp = rospy.Time.now()
-			return
+    def callback(self, track_msg, imprint):
+        if not len(track_msg.associated):
+            self.last_stamp = rospy.Time.now()
+            return
 
-		skeleton = track_msg.associated[0]
+        skeleton = track_msg.associated[0]
 
-		# neck = [x for x in skeleton.body_part if x.part_id == 1]
-		# r_elbow = [x for x in skeleton.body_part if x.part_id == 3]
-		# r_hand = [x for x in skeleton.body_part if x.part_id == 4]
-		neck    = skeleton.neck
-		r_elbow = skeleton.r_elb
-		r_hand  = skeleton.r_wri
+        # neck = [x for x in skeleton.body_part if x.part_id == 1]
+        # r_elbow = [x for x in skeleton.body_part if x.part_id == 3]
+        # r_hand = [x for x in skeleton.body_part if x.part_id == 4]
+        neck    = skeleton.neck
+        r_elbow = skeleton.r_elb
+        r_hand  = skeleton.r_wri
 
 
-		# if not len(neck) or not len(r_elbow) or not len(r_hand):
-		if (neck.x < 0 or r_elbow.x < 0 or r_hand.x < 0) or (neck.y < 0 or r_elbow.y < 0 or r_hand.y < 0):
-			self.last_stamp = rospy.Time.now()
-			return
+        # if not len(neck) or not len(r_elbow) or not len(r_hand):
+        if (neck.x < 0 or r_elbow.x < 0 or r_hand.x < 0) or (neck.y < 0 or r_elbow.y < 0 or r_hand.y < 0):
+            self.last_stamp = rospy.Time.now()
+            return
 
-		# if r_elbow[0].y < neck[0].y and r_hand[0].y < neck[0].y:
-		if r_elbow.y < neck.y and r_hand.y < neck.y:
-			print(self.track_id, rospy.Time.now() - self.last_stamp)
-			if rospy.Time.now() - self.last_stamp > rospy.Duration(5.0):
-				imprint(track_msg.id)
-				self.last_stamp = rospy.Time.now()
+        # if r_elbow[0].y < neck[0].y and r_hand[0].y < neck[0].y:
+        if r_elbow.y < neck.y and r_hand.y < neck.y:
+            print(self.track_id, rospy.Time.now() - self.last_stamp)
+            if rospy.Time.now() - self.last_stamp > rospy.Duration(5.0):
+                imprint(track_msg.id)
+                self.last_stamp = rospy.Time.now()
 
 
 class SimpleGestureRecognitionNode:
-	def __init__(self):
-		print('--- simple_gesture_recognition ---')
-		self.recognizers = {}
-		print('wait for service')
-		rospy.wait_for_service('/monocular_person_following/imprint')
-		self.imprint_service = rospy.ServiceProxy('/monocular_person_following/imprint', Imprint)
+    def __init__(self):
+        print('--- simple_gesture_recognition ---')
+        self.recognizers = {}
+        print('wait for service')
+        rospy.wait_for_service('/monocular_person_following/imprint')
+        self.imprint_service = rospy.ServiceProxy('/monocular_person_following/imprint', Imprint)
 
-		self.sub = rospy.Subscriber('/monocular_people_tracking/tracks', TrackArray, self.callback)
-		print('done')
+        self.sub = rospy.Subscriber('/monocular_people_tracking/tracks', TrackArray, self.callback)
+        print('done')
 
-	def callback(self, track_msg):
-		for track in track_msg.tracks:
-			if track.id not in self.recognizers:
-				self.recognizers[track.id] = GestureRecognizer(track.id)
+    def callback(self, track_msg):
+        for track in track_msg.tracks:
+            if track.id not in self.recognizers:
+                self.recognizers[track.id] = GestureRecognizer(track.id)
 
-			self.recognizers[track.id].callback(track, self.imprint)
+            self.recognizers[track.id].callback(track, self.imprint)
 
-	def imprint(self, target_id):
-		print('reset target', target_id)
-		req = ImprintRequest()
-		req.target_id = target_id
+    def imprint(self, target_id):
+        print('reset target', target_id)
+        req = ImprintRequest()
+        req.target_id = target_id
 
-		self.imprint_service(req)
+        self.imprint_service(req)
 
 
 def main():
-	rospy.init_node('simple_gesture_recognition')
-	node = SimpleGestureRecognitionNode()
-	rospy.spin()
+    rospy.init_node('simple_gesture_recognition')
+    node = SimpleGestureRecognitionNode()
+    rospy.spin()
 
 
 if __name__ == '__main__':
-	main()
+    main()
