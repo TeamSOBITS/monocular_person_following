@@ -13,14 +13,19 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   
-  <depend>tf</depend>
   <depend>rospy</depend>
   <depend>roscpp</depend>
+  <depend>message_generation</depend>
   <depend>cv_bridge</depend>
+  <depend>tf</depend>
   <depend>image_transport</depend>
   <depend>message_filters</depend>
-  <depend>message_generation</depend>
   <depend>eigen_conversions</depend>
+  <depend>usb_cam</depend>
+  <depend>image_view</depend>
+  <depend>rosbag</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
   <depend>ccf_person_identification</depend>
   <depend>monocular_people_tracking</depend>
   <depend>lightweight_human_pose_estimation</depend>

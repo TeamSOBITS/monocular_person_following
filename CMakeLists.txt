@@ -6,14 +6,19 @@ add_compile_options(-std=c++14)
 find_package(OpenCV 4.9.0 REQUIRED PATHS "/opt/opencv/opencv_4.9.0/")
 
 find_package(catkin REQUIRED
-  tf
   rospy
   roscpp
+  message_generation
   cv_bridge
+  tf
   message_filters
   image_transport
   eigen_conversions
-  message_generation
+  usb_cam
+  image_view
+  rosbag
+  sensor_msgs
+  geometry_msgs
   ccf_person_identification
   monocular_people_tracking
   lightweight_human_pose_estimation
