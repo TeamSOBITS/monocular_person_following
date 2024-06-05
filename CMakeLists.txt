@@ -1,7 +1,9 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.10.2)
 project(monocular_person_following)
 
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++14)
+
+find_package(OpenCV 4.9.0 REQUIRED PATHS "/opt/opencv/opencv_4.9.0/")
 
 find_package(catkin REQUIRED
   tf
@@ -14,6 +16,7 @@ find_package(catkin REQUIRED
   message_generation
   ccf_person_identification
   monocular_people_tracking
+  lightweight_human_pose_estimation
 )
 
 ########################

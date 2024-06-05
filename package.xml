@@ -1,5 +1,8 @@
 <?xml version="1.0"?>
-<package format="2">
+<?xml-model
+  href="http://download.ros.org/schema/package_format3.xsd"
+  schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>monocular_person_following</name>
   <version>0.0.0</version>
   <description>The monocular_person_following package</description>
@@ -9,6 +12,7 @@
   <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>
+  
   <depend>tf</depend>
   <depend>rospy</depend>
   <depend>roscpp</depend>
@@ -19,6 +23,7 @@
   <depend>eigen_conversions</depend>
   <depend>ccf_person_identification</depend>
   <depend>monocular_people_tracking</depend>
+  <depend>lightweight_human_pose_estimation</depend>
 
   <export>
   </export>
