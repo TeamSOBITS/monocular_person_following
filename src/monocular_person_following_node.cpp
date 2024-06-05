@@ -16,10 +16,11 @@
 #include <std_srvs/Empty.h>
 #include <std_msgs/String.h>
 #include <sensor_msgs/Image.h>
-#include <tfpose_ros/Persons.h>
+// #include <tfpose_ros/Persons.h>
+
 #include <monocular_person_following/Target.h>
 #include <monocular_person_following/Imprint.h>
-#include <monocular_person_following/FaceDetectionArray.h>
+// #include <monocular_person_following/FaceDetectionArray.h>
 #include <monocular_people_tracking/TrackArray.h>
 
 #include <monocular_person_following/context.hpp>
@@ -41,9 +42,9 @@ public:
           features_pub(image_trans.advertise("/monocular_person_following/features", 1)),
           image_sub(nh, "image", 10),
           tracks_sub(nh, "/monocular_people_tracking/tracks", 10),
-          faces_sub(nh, "/face_detector/faces", 10),
+        //   faces_sub(nh, "/face_detector/faces", 10),
           sync(image_sub, tracks_sub, 30),
-          sync_w_face(image_sub, tracks_sub, faces_sub, 30),
+        //   sync_w_face(image_sub, tracks_sub, faces_sub, 30),
           reset_sub(private_nh.subscribe<std_msgs::Empty>("reset", 10, &MonocularPersonFollowingNode::reset_callback, this)),
           reset_service_server(private_nh.advertiseService("reset", &MonocularPersonFollowingNode::reset_service, this)),
           imprint_service_server(private_nh.advertiseService("imprint", &MonocularPersonFollowingNode::imprint_service, this))
@@ -51,24 +52,26 @@ public:
         state.reset(new InitialState());
         context.reset(new Context(private_nh));
 
-        if(private_nh.param<bool>("use_face", true)) {
-            sync_w_face.registerCallback(boost::bind(&MonocularPersonFollowingNode::callback, this, _1, _2, _3));
-        } else {
-            sync.registerCallback(boost::bind(&MonocularPersonFollowingNode::callback, this, _1, _2, nullptr));
-        }
+        sync.registerCallback(boost::bind(&MonocularPersonFollowingNode::callback, this, _1, _2));
+        // if(private_nh.param<bool>("use_face", true)) {
+        //     sync_w_face.registerCallback(boost::bind(&MonocularPersonFollowingNode::callback, this, _1, _2, _3));
+        // } else {
+        //     sync.registerCallback(boost::bind(&MonocularPersonFollowingNode::callback, this, _1, _2, nullptr));
+        // }
     }
 
-    void callback(const sensor_msgs::ImageConstPtr& image_msg, const monocular_people_tracking::TrackArrayConstPtr& tracks_msg, const monocular_person_following::FaceDetectionArrayConstPtr& faces_msg) {
+    // void callback(const sensor_msgs::ImageConstPtr& image_msg, const monocular_people_tracking::TrackArrayConstPtr& tracks_msg, const monocular_person_following::FaceDetectionArrayConstPtr& faces_msg) {
+    void callback(const sensor_msgs::ImageConstPtr& image_msg, const monocular_people_tracking::TrackArrayConstPtr& tracks_msg) {
         auto cv_image = cv_bridge::toCvCopy(image_msg, "bgr8");
 
         std::unordered_map<long, Tracklet::Ptr> tracks;
 
-        std::unordered_map<long, FaceDetection const*> face_msgs;
-        if(faces_msg != nullptr) {
-            for(const auto& face : faces_msg->faces) {
-                face_msgs[face.track_id] = &face;
-            }
-        }
+        // std::unordered_map<long, FaceDetection const*> face_msgs;
+        // if(faces_msg != nullptr) {
+        //     for(const auto& face : faces_msg->faces) {
+        //         face_msgs[face.track_id] = &face;
+        //     }
+        // }
 
         for(const auto& track : tracks_msg->tracks) {
             tracks[track.id].reset(new Tracklet(tf_listener, tracks_msg->header, track));
@@ -80,11 +83,11 @@ public:
             cv::Rect person_region = calc_person_region(track, cv_image->image.size());
             tracks[track.id]->person_region = person_region;
 
-            auto face = face_msgs.find(track.id);
-            if(face != face_msgs.end() && !face->second->face_image.empty()) {
-                auto face_image = cv_bridge::toCvCopy(face->second->face_image[0], "bgr8");
-                tracks[track.id]->face_image = face_image->image;
-            }
+            // auto face = face_msgs.find(track.id);
+            // if(face != face_msgs.end() && !face->second->face_image.empty()) {
+            //     auto face_image = cv_bridge::toCvCopy(face->second->face_image[0], "bgr8");
+            //     tracks[track.id]->face_image = face_image->image;
+            // }
         }
 
         std::lock_guard<std::mutex> lock(context_mutex);
@@ -201,9 +204,9 @@ private:
 
     message_filters::Subscriber<sensor_msgs::Image> image_sub;
     message_filters::Subscriber<monocular_people_tracking::TrackArray> tracks_sub;
-    message_filters::Subscriber<monocular_person_following::FaceDetectionArray> faces_sub;
+    // message_filters::Subscriber<monocular_person_following::FaceDetectionArray> faces_sub;
     message_filters::TimeSynchronizer<sensor_msgs::Image, monocular_people_tracking::TrackArray> sync;
-    message_filters::TimeSynchronizer<sensor_msgs::Image, monocular_people_tracking::TrackArray, monocular_person_following::FaceDetectionArray> sync_w_face;
+    // message_filters::TimeSynchronizer<sensor_msgs::Image, monocular_people_tracking::TrackArray, monocular_person_following::FaceDetectionArray> sync_w_face;
 
     // reset service callbacks
     ros::Subscriber reset_sub;

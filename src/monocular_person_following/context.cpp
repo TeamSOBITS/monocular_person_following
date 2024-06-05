@@ -30,7 +30,7 @@ void Context::extract_features(const cv::Mat& bgr_image, std::unordered_map<long
 
         std::unordered_map<std::string, cv::Mat> images;
         images["body"] = cv::Mat(bgr_image, *track.second->person_region);
-        images["face"] = track.second->face_image;
+        // images["face"] = track.second->face_image;
 
         if(!classifier->extractInput(track.second->input, images)) {
             ROS_WARN_STREAM("failed to extract input data");
