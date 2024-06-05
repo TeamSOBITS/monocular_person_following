@@ -1,14 +1,16 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="camera_name" default="/csi_cam_0/sd"/>
+  <!-- <arg name="camera_name" default="/csi_cam_0/sd"/> -->
+  <arg name="camera_name" default="/rgb"/>
 
   <arg name="use_face"    default="false"/>
-  <arg name="face_camera_name" default="$(arg camera_name)"/>
+  <!-- <arg name="face_camera_name" default="$(arg camera_name)"/> -->
   <arg name="allow_growth" default="false"/>
 
   <!-- *** people detection *** -->
-  <include file="$(find monocular_people_tracking)/launch/tf_openpose.launch" if="true">
-    <arg name="image_topic" value="$(arg camera_name)/image_rect"/>
+  <!-- <include file="$(find monocular_people_tracking)/launch/tf_openpose.launch" if="false"> -->
+    <!-- <arg name="image_topic" value="$(arg camera_name)/image_rect"/> -->
+    <!-- <arg name="image_topic" value="$(arg camera_name)/image_raw"/> -->
     <!--
     /// @arg model       : "cmu", "mobilenet_thin", "mobilenet_v2_large", or "mobilenet_v2_small"
     /// @arg resolution  : e.g., "368x368", "432x368", "656x368"
@@ -18,13 +20,13 @@
     ///        for Xavier      "mobilenet_thin" & "656x368"
     ///        for desktop PC  "cmu" & "656x368" (depending on the GPU)
     -->
-    <arg name="model" value="mobilenet_thin"/>
-    <arg name="resolution" value="656x368"/>
-    <arg name="allow_growth" value="$(arg allow_growth)"/>
-  </include>
+    <!-- <arg name="model" value="mobilenet_thin"/> -->
+    <!-- <arg name="resolution" value="656x368"/> -->
+    <!-- <arg name="allow_growth" value="$(arg allow_growth)"/> -->
+  <!-- </include> -->
 
   <!-- *** people tracking *** -->
-  <node pkg="monocular_people_tracking" type="monocular_people_tracking_node" name="monocular_people_tracking">
+  <node pkg="monocular_people_tracking" type="monocular_people_tracking_node" name="monocular_people_tracking" output="screen">
     <remap from="camera_info" to="$(arg camera_name)/camera_info"/>
 
     <!-- detection parameters -->
@@ -48,24 +50,25 @@
   </node>
 
   <!-- *** face detection *** -->
-  <node pkg="monocular_person_following" type="face_detector_node.py" name="face_detector" output="screen" if="$(arg use_face)">
-    <remap from="camera_info" to="$(arg camera_name)/camera_info"/>
-    <remap from="image_rect" to="$(arg face_camera_name)/image_rect"/>
+  <!-- <node pkg="monocular_person_following" type="face_detector_node.py" name="face_detector" output="screen" if="$(arg use_face)"> -->
+    <!-- <remap from="camera_info" to="$(arg camera_name)/camera_info"/> -->
+    <!-- <remap from="image_rect" to="$(arg face_camera_name)/image_rect"/> -->
+    <!-- <remap from="image_raw" to="$(arg face_camera_name)/image_raw"/> -->
 
-    <param name="roi_scale" value="1.0"/>
-    <param name="face_detection_upscale_pyramid" value="1"/>
-    <param name="confidence_thresh" value="-0.5"/>
-    <param name="face_detection_expantion_scale" value="1.5"/>
-  </node>
+    <!-- <param name="roi_scale" value="1.0"/> -->
+    <!-- <param name="face_detection_upscale_pyramid" value="1"/> -->
+    <!-- <param name="confidence_thresh" value="-0.5"/> -->
+    <!-- <param name="face_detection_expantion_scale" value="1.5"/> -->
+  <!-- </node> -->
 
   <!-- *** face feature extraction *** -->
-  <node pkg="open_face_recognition" type="open_face_recognition_node.py" name="open_face_recognition" output="screen" if="$(arg use_face)">
-    <param name="embedding_framework" value="facenet"/>
-  </node>
+  <!-- <node pkg="open_face_recognition" type="open_face_recognition_node.py" name="open_face_recognition" output="screen" if="$(arg use_face)"> -->
+    <!-- <param name="embedding_framework" value="facenet"/> -->
+  <!-- </node> -->
 
   <!-- *** person identification *** -->
   <node pkg="monocular_person_following" type="monocular_person_following_node" name="monocular_person_following" output="screen">
-    <remap from="image" to="$(arg camera_name)/image_rect"/>
+    <remap from="image" to="$(arg camera_name)/image_raw"/>
     <param name="use_face" value="$(arg use_face)"/>
     <param name="use_body" value="true"/>
 
@@ -93,8 +96,10 @@
   </node>
 
   <!-- *** visualization *** -->
-  <node pkg="monocular_person_following" type="visualization.py" name="visualization_node" output="screen">
-    <remap from="image_rect" to="$(arg camera_name)/image_rect"/>
+  <!-- <node pkg="monocular_person_following" type="visualization.py" name="visualization_node" output="screen"> -->
+  <node pkg="lightweight_human_pose_estimation" type="visualization.py" name="visualization_node" output="screen">
+    <!-- <remap from="image_rect" to="$(arg camera_name)/image_rect"/> -->
+    <remap from="image_raw" to="$(arg camera_name)/image_raw"/>
     <param name="show" value="false"/>
     <param name="use_face" value="$(arg use_face)"/>
   </node>
@@ -105,7 +110,7 @@
   <node pkg="monocular_person_following" type="simple_gesture_recognition.py" name="simple_gesture_recognition" output="screen"/>
 
   <!-- *** robot controller *** -->
-  <node pkg="monocular_person_following" type="robot_controller.py" name="robot_controller" if="false">
+  <node pkg="monocular_person_following" type="robot_controller.py" name="robot_controller" output="screen" if="false">
     <remap from="cmd_vel" to="/RosAria/cmd_vel"/>
     <param name="enable_back" value="false"/>
     <param name="max_vx" value="0.1"/>
