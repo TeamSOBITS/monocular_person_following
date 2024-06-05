@@ -16,7 +16,6 @@
 #include <std_srvs/Empty.h>
 #include <std_msgs/String.h>
 #include <sensor_msgs/Image.h>
-// #include <tfpose_ros/Persons.h>
 
 #include <monocular_person_following/Target.h>
 #include <monocular_person_following/Imprint.h>
