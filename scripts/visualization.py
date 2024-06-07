@@ -3,9 +3,11 @@
 import cv2
 import math
 import numpy
+import os, sys
 
 import tf
 import rospy
+import rospkg
 import cv_bridge
 import message_filters
 
@@ -14,9 +16,10 @@ from sensor_msgs.msg import Image
 from monocular_people_tracking.msg import TrackArray
 from monocular_person_following.msg import Target
 
-# TODO: import Pose from lightweight_human_pose_estimation/modules/pose.py
-from lightweight_human_pose_estimation.modules.pose import Pose
-
+# TODO: import Pose from lightweight_human_pose_estimation/script/modules/pose.py using os and ros package
+rospack = rospkg.RosPack()
+sys.path.append(os.path.join(rospack.get_path('lightweight_human_pose_estimation'), 'script'))
+from modules.pose import Pose
 
 class VisualizationNode:
     def __init__(self):
@@ -94,24 +97,24 @@ class VisualizationNode:
         pose_keypoints = numpy.ones((num_keypoints, 2), dtype=numpy.int32) * -1
 
         # Assign keypoint values from message to pose_keypoints
-        pose_keypoints[0] = [human.nose.x, human.nose.y]
-        pose_keypoints[1] = [human.neck.x, human.neck.y]
-        pose_keypoints[2] = [human.r_sho.x, human.r_sho.y]
-        pose_keypoints[3] = [human.r_elb.x, human.r_elb.y]
-        pose_keypoints[4] = [human.r_wri.x, human.r_wri.y]
-        pose_keypoints[5] = [human.l_sho.x, human.l_sho.y]
-        pose_keypoints[6] = [human.l_elb.x, human.l_elb.y]
-        pose_keypoints[7] = [human.l_wri.x, human.l_wri.y]
-        pose_keypoints[8] = [human.r_hip.x, human.r_hip.y]
-        pose_keypoints[9] = [human.r_knee.x, human.r_knee.y]
-        pose_keypoints[10] = [human.r_ank.x, human.r_ank.y]
-        pose_keypoints[11] = [human.l_hip.x, human.l_hip.y]
+        pose_keypoints[0]  = [human.nose.x,   human.nose.y  ]
+        pose_keypoints[1]  = [human.neck.x,   human.neck.y  ]
+        pose_keypoints[2]  = [human.r_sho.x,  human.r_sho.y ]
+        pose_keypoints[3]  = [human.r_elb.x,  human.r_elb.y ]
+        pose_keypoints[4]  = [human.r_wri.x,  human.r_wri.y ] 
+        pose_keypoints[5]  = [human.l_sho.x,  human.l_sho.y ]
+        pose_keypoints[6]  = [human.l_elb.x,  human.l_elb.y ]
+        pose_keypoints[7]  = [human.l_wri.x,  human.l_wri.y ]
+        pose_keypoints[8]  = [human.r_hip.x,  human.r_hip.y ]
+        pose_keypoints[9]  = [human.r_knee.x, human.r_knee.y]
+        pose_keypoints[10] = [human.r_ank.x,  human.r_ank.y ]
+        pose_keypoints[11] = [human.l_hip.x,  human.l_hip.y ]
         pose_keypoints[12] = [human.l_knee.x, human.l_knee.y]
-        pose_keypoints[13] = [human.l_ank.x, human.l_ank.y]
-        pose_keypoints[14] = [human.r_eye.x, human.r_eye.y]
-        pose_keypoints[15] = [human.l_eye.x, human.l_eye.y]
-        pose_keypoints[16] = [human.r_ear.x, human.r_ear.y]
-        pose_keypoints[17] = [human.l_ear.x, human.l_ear.y]
+        pose_keypoints[13] = [human.l_ank.x,  human.l_ank.y ]
+        pose_keypoints[14] = [human.r_eye.x,  human.r_eye.y ]
+        pose_keypoints[15] = [human.l_eye.x,  human.l_eye.y ]
+        pose_keypoints[16] = [human.r_ear.x,  human.r_ear.y ]
+        pose_keypoints[17] = [human.l_ear.x,  human.l_ear.y ]
 
         return pose_keypoints
 
