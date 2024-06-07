@@ -1,76 +1,82 @@
 <?xml version="1.0"?>
 <launch>
-  <!-- <arg name="camera_name" default="/csi_cam_0/sd"/> -->
-  <arg name="camera_name" default="/rgb"/>
+  <arg name="camera_name"   default="/rgb"/>
+  <arg name="allow_growth"  default="false"/>
+  <arg name="show_rviz"     default="false"/>
 
-  <arg name="use_face"    default="false"/>
-  <!-- <arg name="face_camera_name" default="$(arg camera_name)"/> -->
-  <arg name="allow_growth" default="false"/>
+  <!-- people detection -->
+  <arg name="cpu"                   default="false"/>
+  <arg name="pose_2d_detect"        default="true"/>
+  <arg name="pose_2d_img_show"      default="false"/>
+  <arg name="pose_2d_img_pub"       default="true"/>
+  <arg name="pose_2d_log_show"      default="false"/>
+
+  <!-- detection parameters -->
+  <arg name="detection_confidence_thresh"           default="0.1"/>
+  <arg name="detection_border_thresh_w"             default="100"/>
+  <arg name="detection_border_thresh_h"             default="25"/>
+
+  <!-- UKF parameters -->
+  <arg name="measurement_noise_pix_cov"             default="100"/>
+  <arg name="process_noise_pos_cov"                 default="0.03"/>
+  <arg name="process_noise_vel_cov"                 default="0.01"/>
+  <arg name="process_noise_height_cov"              default="1e-10"/>
+
+  <!-- tracking parameters -->
+  <arg name="init_cov_scale"                        default="0.25"/>
+  <arg name="association_maha_sq_thresh"            default="9.0"/>
+  <arg name="association_neck_ankle_max_dist"       default="200"/>
+  <arg name="association_neck_max_dist"             default="150"/>
+  <arg name="tracking_remove_trace_thresh"          default="2.0"/>
+  <arg name="tracking_newtrack_dist2exists_thersh"  default="100"/>
+
+  <!-- person identification -->
+  <arg name="imprinting_max_dist"                   default="4.0"/>
+  <arg name="initial_training_num_samples"          default="10"/>
+  <arg name="min_target_confidence"                 default="0.1"/>
+  <arg name="id_switch_detection_thresh"            default="-0.1"/>
+  <arg name="reid_confidence_thresh"                default="0.1"/>
+  <arg name="reid_positive_count"                   default="5"/>
+
 
   <!-- *** people detection *** -->
-  <!-- <include file="$(find monocular_people_tracking)/launch/tf_openpose.launch" if="false"> -->
-    <!-- <arg name="image_topic" value="$(arg camera_name)/image_rect"/> -->
-    <!-- <arg name="image_topic" value="$(arg camera_name)/image_raw"/> -->
-    <!--
-    /// @arg model       : "cmu", "mobilenet_thin", "mobilenet_v2_large", or "mobilenet_v2_small"
-    /// @arg resolution  : e.g., "368x368", "432x368", "656x368"
-    ///
-    /// @brief parameter recommendation
-    ///        for TX2         "mobilenet_thin" & "368x368"
-    ///        for Xavier      "mobilenet_thin" & "656x368"
-    ///        for desktop PC  "cmu" & "656x368" (depending on the GPU)
-    -->
-    <!-- <arg name="model" value="mobilenet_thin"/> -->
-    <!-- <arg name="resolution" value="656x368"/> -->
-    <!-- <arg name="allow_growth" value="$(arg allow_growth)"/> -->
-  <!-- </include> -->
+  <include file="$(find lightweight_human_pose_estimation)/launch/human_pose_2d.launch">
+    <param name="cpu"                   type="bool"     value="$(arg cpu)"/>
+    <param name="input_image_topic"     type="str"      value="$(arg camera_name)/image_raw"/>
+
+    <param name="pose_2d_detect"        type="bool"     value="$(arg pose_2d_detect)"/>
+    <param name="pose_2d_img_show"      type="bool"     value="$(arg pose_2d_img_show)"/>
+    <param name="pose_2d_img_pub"       type="bool"     value="$(arg pose_2d_img_pub)"/>
+    <param name="pose_2d_log_show"      type="bool"     value="$(arg pose_2d_log_show)"/>
+  </include>
 
   <!-- *** people tracking *** -->
   <node pkg="monocular_people_tracking" type="monocular_people_tracking_node" name="monocular_people_tracking" output="screen">
     <remap from="camera_info" to="$(arg camera_name)/camera_info"/>
 
     <!-- detection parameters -->
-    <param name="detection_confidence_thresh" value="0.1"/>
-    <param name="detection_border_thresh_w" value="100"/>
-    <param name="detection_border_thresh_h" value="25"/>
+    <param name="detection_confidence_thresh"           value="$(arg detection_confidence_thresh)"/>
+    <param name="detection_border_thresh_w"             value="$(arg detection_border_thresh_w)"/>
+    <param name="detection_border_thresh_h"             value="$(arg detection_border_thresh_h)"/>
 
     <!-- UKF parameters -->
-    <param name="measurement_noise_pix_cov" value="100"/>
-    <param name="process_noise_pos_cov" value="0.03"/>
-    <param name="process_noise_vel_cov" value="0.01"/>
-    <param name="process_noise_height_cov" value="1e-10"/>
+    <param name="measurement_noise_pix_cov"             value="$(arg measurement_noise_pix_cov)"/>
+    <param name="process_noise_pos_cov"                 value="$(arg process_noise_pos_cov)"/>
+    <param name="process_noise_vel_cov"                 value="$(arg process_noise_vel_cov)"/>
+    <param name="process_noise_height_cov"              value="$(arg process_noise_height_cov)"/>
 
     <!-- tracking parameters -->
-    <param name="init_cov_scale" value="0.25"/>
-    <param name="association_maha_sq_thresh" value="9.0"/>
-    <param name="association_neck_ankle_max_dist" value="200"/>
-    <param name="association_neck_max_dist" value="150"/>
-    <param name="tracking_remove_trace_thresh" value="2.0"/>
-    <param name="tracking_newtrack_dist2exists_thersh" value="100"/>
+    <param name="init_cov_scale"                        value="$(arg init_cov_scale)"/>
+    <param name="association_maha_sq_thresh"            value="$(arg association_maha_sq_thresh)"/>
+    <param name="association_neck_ankle_max_dist"       value="$(arg association_neck_ankle_max_dist)"/>
+    <param name="association_neck_max_dist"             value="$(arg association_neck_max_dist)"/>
+    <param name="tracking_remove_trace_thresh"          value="$(arg tracking_remove_trace_thresh)"/>
+    <param name="tracking_newtrack_dist2exists_thersh"  value="$(arg tracking_newtrack_dist2exists_thersh)"/>
   </node>
-
-  <!-- *** face detection *** -->
-  <!-- <node pkg="monocular_person_following" type="face_detector_node.py" name="face_detector" output="screen" if="$(arg use_face)"> -->
-    <!-- <remap from="camera_info" to="$(arg camera_name)/camera_info"/> -->
-    <!-- <remap from="image_rect" to="$(arg face_camera_name)/image_rect"/> -->
-    <!-- <remap from="image_raw" to="$(arg face_camera_name)/image_raw"/> -->
-
-    <!-- <param name="roi_scale" value="1.0"/> -->
-    <!-- <param name="face_detection_upscale_pyramid" value="1"/> -->
-    <!-- <param name="confidence_thresh" value="-0.5"/> -->
-    <!-- <param name="face_detection_expantion_scale" value="1.5"/> -->
-  <!-- </node> -->
-
-  <!-- *** face feature extraction *** -->
-  <!-- <node pkg="open_face_recognition" type="open_face_recognition_node.py" name="open_face_recognition" output="screen" if="$(arg use_face)"> -->
-    <!-- <param name="embedding_framework" value="facenet"/> -->
-  <!-- </node> -->
 
   <!-- *** person identification *** -->
   <node pkg="monocular_person_following" type="monocular_person_following_node" name="monocular_person_following" output="screen">
     <remap from="image" to="$(arg camera_name)/image_raw"/>
-    <param name="use_face" value="$(arg use_face)"/>
-    <param name="use_body" value="true"/>
 
     <!--
     /// @brief
@@ -87,12 +93,12 @@
     ///   if a track shows a confidence higher than reid_confidence_thresh several times (reid_positive_count),
     ///   the track is reidentified as the target, and the system transits to Tracking state
     -->
-    <param name="imprinting_max_dist" value="4.0"/>
-    <param name="initial_training_num_samples" value="10"/>
-    <param name="min_target_confidence" value="0.1"/>
-    <param name="id_switch_detection_thresh" value="-0.1"/>
-    <param name="reid_confidence_thresh" value="0.1"/>
-    <param name="reid_positive_count" value="5"/>
+    <param name="imprinting_max_dist"           value="$(arg imprinting_max_dist)"/>
+    <param name="initial_training_num_samples"  value="$(arg initial_training_num_samples)"/>
+    <param name="min_target_confidence"         value="$(arg min_target_confidence)"/>
+    <param name="id_switch_detection_thresh"    value="$(arg id_switch_detection_thresh)"/>
+    <param name="reid_confidence_thresh"        value="$(arg reid_confidence_thresh)"/>
+    <param name="reid_positive_count"           value="$(arg reid_positive_count)"/>
   </node>
 
   <!-- *** visualization *** -->
@@ -100,17 +106,16 @@
   <node pkg="lightweight_human_pose_estimation" type="visualization.py" name="visualization_node" output="screen">
     <!-- <remap from="image_rect" to="$(arg camera_name)/image_rect"/> -->
     <remap from="image_raw" to="$(arg camera_name)/image_raw"/>
-    <param name="show" value="false"/>
-    <param name="use_face" value="$(arg use_face)"/>
+    <param name="show"      value="$(arg show_rviz)"/>
   </node>
   <node pkg="image_transport" type="republish" name="compress_visualize" args="raw in:=/visualization_node/visualize compressed out:=/visualization_node/visualize"/>
-  <node pkg="topic_tools" type="throttle" name="throttle_visualize" args="messages /visualization_node/visualize/compressed 4 /visualization_node/visualize_slow/compressed"/>
+  <node pkg="topic_tools"     type="throttle"  name="throttle_visualize" args="messages /visualization_node/visualize/compressed 4 /visualization_node/visualize_slow/compressed"/>
 
   <!-- *** gesture recognition *** -->
   <node pkg="monocular_person_following" type="simple_gesture_recognition.py" name="simple_gesture_recognition" output="screen"/>
 
   <!-- *** robot controller *** -->
-  <node pkg="monocular_person_following" type="robot_controller.py" name="robot_controller" output="screen" if="false">
+  <!-- <node pkg="monocular_person_following" type="robot_controller.py" name="robot_controller" output="screen" if="false">
     <remap from="cmd_vel" to="/RosAria/cmd_vel"/>
     <param name="enable_back" value="false"/>
     <param name="max_vx" value="0.1"/>
@@ -119,5 +124,5 @@
     <param name="gain_va" value="0.1"/>
     <param name="distance" value="2.5"/>
     <param name="timeout" value="0.5"/>
-  </node>
+  </node> -->
 </launch>
