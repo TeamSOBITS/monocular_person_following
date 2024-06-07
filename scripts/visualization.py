@@ -9,11 +9,12 @@ import rospy
 import cv_bridge
 import message_filters
 
-from lightweight_human_pose_estimation.msg import KeyPoint2DArray, KeyPoint2D
+from lightweight_human_pose_estimation.msg import KeyPoint2DArray
 from sensor_msgs.msg import Image
 from monocular_people_tracking.msg import TrackArray
-from monocular_person_following.msg import FaceDetectionArray, FaceDetection, BoundingBox2D, Target
+from monocular_person_following.msg import Target
 
+# TODO: import Pose from lightweight_human_pose_estimation/modules/pose.py
 from lightweight_human_pose_estimation.modules.pose import Pose
 
 
@@ -28,7 +29,6 @@ class VisualizationNode:
         self.target_id = 0
         self.state_name = "NONE"
         self.confidences = {}
-        self.use_face = rospy.get_param('~use_face', False)
         self.target_sub = rospy.Subscriber('/monocular_person_following/target', Target, self.target_callback)
 
         self.image = numpy.zeros((128, 128, 3), dtype=numpy.uint8)
@@ -38,13 +38,8 @@ class VisualizationNode:
             message_filters.Subscriber('/monocular_people_tracking/tracks', TrackArray)
         ]
 
-        if self.use_face:
-            subs.append(message_filters.Subscriber('/face_detector/faces', FaceDetectionArray))
-            self.sync = message_filters.TimeSynchronizer(subs, 50)
-            self.sync.registerCallback(self.callback)
-        else:
-            self.sync = message_filters.TimeSynchronizer(subs, 50)
-            self.sync.registerCallback(self.callback_wo_face)
+        self.sync = message_filters.TimeSynchronizer(subs, 50)
+        self.sync.registerCallback(self.callback)
 
     def target_callback(self, target_msg):
         self.state_name = target_msg.state.data
@@ -62,10 +57,7 @@ class VisualizationNode:
             for j in range(num_classifiers):
                 self.confidences[track_id][target_msg.classifier_names[j].data] = target_msg.classifier_confidences[num_classifiers * i + j]
 
-    def callback_wo_face(self, image_msg, poses_msg, tracks_msg):
-        self.callback(image_msg, poses_msg, tracks_msg, None)
-
-    def callback(self, image_msg, poses_msg, tracks_msg, faces_msg):
+    def callback(self, image_msg, poses_msg, tracks_msg):
         image = cv_bridge.CvBridge().imgmsg_to_cv2(image_msg, 'bgr8')
 
         image = self.draw_humans(image, poses_msg.data, imgcopy=False)
@@ -76,31 +68,6 @@ class VisualizationNode:
 
             if track.id == self.target_id:
                 self.draw_target_icon(image, track)
-
-        if faces_msg is not None:
-            face_scale = image_msg.width / float(faces_msg.image_width)
-
-            def draw_face(bb, color, line_width):
-                tl = numpy.float32((bb.x, bb.y)) * face_scale
-                br = numpy.float32((bb.x + bb.width, bb.y + bb.height)) * face_scale
-
-                cv2.rectangle(image, tuple(tl.astype(numpy.int32)), tuple(br.astype(numpy.int32)), color, line_width)
-
-            for face in faces_msg.faces:
-                if not len(face.face_roi):
-                    continue
-                draw_face(face.face_roi[0], (255, 0, 0), 1)
-
-                if not len(face.face_region):
-                    continue
-
-                face_confidence = 0.0
-                if face.track_id in self.confidences:
-                    face_confidence = self.confidences[face.track_id]['face']
-                face_confidence = (face_confidence + 1.0) / 2.0
-
-                color = (0, int(face_confidence * 255), int((1.0 - face_confidence) * 255))
-                draw_face(face.face_region[0], color, 2)
 
         cv2.putText(image, self.state_name, (15, 30), cv2.FONT_HERSHEY_PLAIN, 1.5, (0, 0, 0), 3)
         cv2.putText(image, self.state_name, (15, 30), cv2.FONT_HERSHEY_PLAIN, 1.5, (255, 255, 255), 1)
