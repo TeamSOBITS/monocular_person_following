@@ -21,7 +21,7 @@ sudo apt-get install -y \
 
 # Clone required repositories
 cd ../
-git clone https://github.com/TeamSOBITS/monocular_people_tracking.git
+git clone --recurse-submodules https://github.com/TeamSOBITS/monocular_people_tracking.git
 cd monocular_people_tracking/
 bash install.sh
 
