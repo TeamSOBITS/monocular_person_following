@@ -1,0 +1,8 @@
+<library path="lib/libperson_id_follow_nodelet">
+    <class name="person_id_follow_nodelet/CCFPersonId"
+        type="person_id_follow_nodelet::CCFPersonId"
+        base_class_type="nodelet::Nodelet">
+        <description>
+        </description>
+    </class>
+</library>

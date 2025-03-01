@@ -1,0 +1,7 @@
+# ssd_bb_topic_name             : /ssd_object_detect/object_rect
+# ssd_op_topic_name             : /ssd_object_detect/object_pose
+# yolo_bb_topic_name             : /yolov10/objects_rect
+yolo_bb_topic_name             : /yolov10_bbox_to_tf/object_rects
+yolo_op_topic_name             : /yolov10_bbox_to_tf/object_poses
+# sensor_img_topic_name         : /rgb_to_depth/image_raw
+sensor_img_topic_name         : /rgb/image_raw
